@@ -106,16 +106,55 @@ function EmployeeList() {
 
   const paginate = pageNumber => setCurrentPage(pageNumber);
   console.log(isAddEditModalOpen);
+
+  const fetchRandomUsers = async (numUsers) => {
+    try {
+      const response = await axios.get(`https://randomuser.me/api/?results=${numUsers}`);
+  
+      const randomUsers = response.data.results.map(user => ({
+        firstName: user.name.first,
+        lastName: user.name.last,
+        department: 'Random Department',
+        age: user.dob.age,
+        title: 'Random Title',
+        location: `${user.location.city}, ${user.location.country}`,
+        image: user.picture.large,
+      }));
+  
+      randomUsers.forEach(async (user) => {
+        try {
+          await axios.post('http://localhost:3003/employee/create', user);
+        } catch (error) {
+          console.error('Error adding random user:', error);
+        }
+      });
+  
+      setEmployees([...employees, ...randomUsers]);
+      Swal.fire({
+        icon: 'success',
+        title: 'Random Employees Added',
+        text: `Added ${numUsers} random employees to the list.`,
+      });
+    } catch (error) {
+      console.error('Error fetching random users:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occurred while fetching random users.',
+      });
+    }
+  };
+  
+
   return (
     <div>
       <h1 className='sa'>Employees</h1>
       <button onClick={handleAddEmployee}>Add Employee</button>
-      <input type="text" placeholder="Search by name" value={searchTerm} onChange={handleSearch} autofocus id="search" />
-      
-      
+      <button onClick={() => fetchRandomUsers(10)}>Add Random Employees</button> {/* New button */}
+      <input type="text" placeholder="Search by name" value={searchTerm} onChange={handleSearch} autoFocus id="search" />
       <div className='k'>
         <table className="content-table">
-          <thead>
+        <thead>
             <tr>
               <th>Image</th>
               <th>First Name</th>
@@ -131,7 +170,7 @@ function EmployeeList() {
           <tbody>
             {currentItems.map(employee => (
               <tr key={employee._id}>
-                <td>
+               <td>
                   <img src={employee.image} alt="Employee" style={{ width: '50px', height: '50px' , borderRadius:'50%'}} />
                 </td>
                 <td>{employee.firstName}</td>
@@ -151,7 +190,7 @@ function EmployeeList() {
           </tbody>
         </table>
         <div className="pagination">
-          {Array.from({ length: Math.ceil(filteredEmployees.length / itemsPerPage) }).map((_, index) => (
+        {Array.from({ length: Math.ceil(filteredEmployees.length / itemsPerPage) }).map((_, index) => (
             <button key={index} onClick={() => paginate(index + 1)}>
               {index + 1}
             </button>
